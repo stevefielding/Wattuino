@@ -337,6 +337,8 @@ ATmega328PB 0x1E 0x95 0x16
 #define WATCHDOG_500MS  (_BV(WDP2) | _BV(WDP0) | _BV(WDE))
 #define WATCHDOG_1S     (_BV(WDP2) | _BV(WDP1) | _BV(WDE))
 #define WATCHDOG_2S     (_BV(WDP2) | _BV(WDP1) | _BV(WDP0) | _BV(WDE))
+#define WATCHDOG_4S     (_BV(WDP3) | _BV(WDE))
+#define WATCHDOG_8S     (_BV(WDP3) | _BV(WDP0) | _BV(WDE))
 #ifndef __AVR_ATmega8__
 #define WATCHDOG_4S     (_BV(WDP3) | _BV(WDE))
 #define WATCHDOG_8S     (_BV(WDP3) | _BV(WDP0) | _BV(WDE))
@@ -495,7 +497,14 @@ int main(void) {
   ch = MCUCSR;
   MCUCSR = 0;
 #endif
-  if (ch & (_BV(WDRF) | _BV(BORF) | _BV(PORF)))
+  // getting the bootloader to run on power up seems to be really difficult
+  // if I disconnect the usb/uart adapter then reliability improves
+  // if I remove PORF option, then power on boot seems to end up in never land
+  // with garbage in the main memory, the processor reboots repetitively
+  // I think that this code may start with a PORF and then get a BORF?????
+  // if (ch & (_BV(WDRF) | _BV(BORF) | _BV(PORF)))
+  if (!(ch & _BV(EXTRF)) && !(ch & _BV(PORF)) && !(ch & _BV(BORF)))
+  // if (ch & (_BV(WDRF) | _BV(BORF) ))
       appStart(ch);
 
 #if LED_START_FLASHES > 0
@@ -517,8 +526,18 @@ int main(void) {
 #endif
 #endif
 
+// Set RS485 transmit enable as an output and set output to high
+// this is a debug mode when testing with RS485 and avoids contention
+// on the RXD pin
+#ifdef RS485
+  RS485_DDR |= _BV(RS485);
+  RS485_PORT |= _BV(RS485);
+#endif
+
   // Set up watchdog to trigger after 1s
-  watchdogConfig(WATCHDOG_1S); //WATCHDOG_1S WATCHDOG_500MS WATCHDOG_250MS
+  // watchdogConfig(WATCHDOG_1S); //WATCHDOG_1S WATCHDOG_500MS WATCHDOG_250MS
+  watchdogConfig(WATCHDOG_8S);
+  // watchdogConfig(WATCHDOG_OFF);
 
 #if (LED_START_FLASHES > 0) || defined(LED_DATA_FLASH)
   /* Set LED pin as output */
@@ -535,7 +554,7 @@ int main(void) {
   flash_led(LED_START_FLASHES * 2);
 #endif
 
-
+#ifdef AUTO_BAUD_DETECT
   //Auto Baud Rate Detection
   //first byte is STK_GET_SYNC (0x30 = 0b00110000)
   //get bit time
@@ -565,6 +584,7 @@ int main(void) {
 #else
   UART_SRL = td.u8.l;
 #endif
+#endif // AUTO_BAUD
 
   //wait for sync command
   while(getch() != STK_GET_SYNC)

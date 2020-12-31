@@ -31,8 +31,8 @@
 
 
 # MCU name: atmega328p or atmega328pb
-MCU = atmega328p
-
+MCU = atmega328pb
+LED_PORT = E0
 
 # Processor frequency.
 #     This will define a symbol, F_CPU, in all source code files equal to the 
@@ -96,7 +96,8 @@ CSTANDARD = -std=gnu99
 
 
 # Place -D or -U options here for C sources
-CDEFS = -DF_CPU=$(F_CPU)UL
+# CDEFS = -DF_CPU=$(F_CPU)UL -DLED=$(LED_PORT) -DLED_START_FLASHES=4 -DLED_DATA_FLASH=1 -DBAUD_RATE=57600L
+CDEFS = -DF_CPU=$(F_CPU)UL -DLED=$(LED_PORT) -DLED_START_FLASHES=4 -DBAUD_RATE=57600L -DLED_DATA_FLASH=1 -DUART=0
 
 
 # Place -D or -U options here for ASM sources
@@ -199,7 +200,7 @@ EXTMEMOPTS =
 #    -Map:      create map file
 #    --cref:    add cross reference to  map file 
 #512byte=0x7e00 1024byte=0x7c00
-LDFLAGS = -Wl,--section-start=.text=0x7e00
+LDFLAGS = -Wl,--section-start=.text=0x7c00
 LDFLAGS += -Wl,--relax -Wl,--gc-sections -nostartfiles -nostdlib
 LDFLAGS += $(EXTMEMOPTS)
 LDFLAGS += $(patsubst %,-L%,$(EXTRALIBDIRS))

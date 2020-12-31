@@ -278,7 +278,10 @@
 #define L6 0xC06
 #define L7 0xC07
 
-
+#define RS485_DDR DDRD
+#define RS485_PORT PORTD
+#define RS485_PIN PIND
+#define RS485 PIND6
 
 #if LED == B0
 #undef LED
