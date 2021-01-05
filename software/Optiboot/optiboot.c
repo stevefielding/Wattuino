@@ -526,12 +526,10 @@ int main(void) {
 #endif
 #endif
 
-// Set RS485 transmit enable as an output and set output to high
-// this is a debug mode when testing with RS485 and avoids contention
-// on the RXD pin
+// Set RS485 transmit enable as an output and set output to low
 #ifdef RS485
   RS485_DDR |= _BV(RS485);
-  RS485_PORT |= _BV(RS485);
+  RS485_PORT &= ~_BV(RS485);
 #endif
 
   // Set up watchdog to trigger after 1s
@@ -754,8 +752,30 @@ int main(void) {
 
 void putch(char ch) {
 #ifndef SOFT_UART
+#ifdef RS485
+ uint8_t x;
+  do {
+    x = UART_SRA;
+  } while (!(x & _BV(UDRE0)));
+  // clear transmitted flag
+  x |= _BV(TXC0);
+  UART_SRA = x;
+  // put transceiver to output mode
+  RS485_PORT |= _BV(RS485);
+  // put char
+  UART_UDR = ch;
+  // wait for char transmitted
+  while (!(UART_SRA & _BV(TXC0)));
+  // I have read that a delay might be required because the tx data las bit is still
+  // being sent when TXC0 bit is cleared. However, measurements with scope
+  // have shown no evidence that this is needed
+  //_delay_us(18);
+  // put transceiver to input mode
+  RS485_PORT &= ~_BV(RS485);
+#else
   while (!(UART_SRA & _BV(UDRE0)));
   UART_UDR = ch;
+#endif
 #else
   __asm__ __volatile__ (
     "   com %[ch]\n" // ones complement, carry set
