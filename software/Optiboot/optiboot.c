@@ -527,9 +527,12 @@ int main(void) {
 #endif
 
 // Set RS485 transmit enable as an output and set output to low
+// Enable uart_rx pull-up so that pin does not float when the RS485 RX is tri-stated
+// because RS485 is configured for TX
 #ifdef RS485
   RS485_DDR |= _BV(RS485);
   RS485_PORT &= ~_BV(RS485);
+  UART_PIN = UART_PIN | _BV(UART_RX_BIT); //enable uart-rx pull-up
 #endif
 
   // Set up watchdog to trigger after 1s
