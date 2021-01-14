@@ -385,6 +385,9 @@ static inline void read_mem(uint8_t memtype,
 #ifdef SOFT_UART
 void uartDelay() __attribute__ ((naked));
 #endif
+#ifdef RS485
+void fixedDelay() __attribute__ ((naked));
+#endif
 void appStart(uint8_t rstFlags) __attribute__ ((naked));
 
 /*
@@ -756,6 +759,7 @@ int main(void) {
 void putch(char ch) {
 #ifndef SOFT_UART
 #ifdef RS485
+
  uint8_t x;
   do {
     x = UART_SRA;
@@ -889,6 +893,19 @@ void uartDelay() {
 }
 #endif
 
+#ifdef RS485
+// fixed delay, around 100uS
+void fixedDelay() {
+  __asm__ __volatile__ (
+    "ldi r25,%[count]\n"
+    "1:dec r25\n"
+    "brne 1b\n"
+    "ret\n"
+    ::[count] "M" (255)
+  );
+}
+#endif
+
 void getNch(uint8_t count) {
   do getch(); while (--count);
   verifySpace();
@@ -900,6 +917,16 @@ void verifySpace() {
     while (1)			      // and busy-loop so that WD causes
       ;				      //  a reset and app start.
   }
+#ifdef RS485
+  // Add ~300uS delay (17-bit intervals at 57600 baud) before transmission. 
+  // This gives avrdude more time to enable RS485 RX
+  // in the case where it is slow to transition from TX to RX
+  __asm__ __volatile__ (
+    "rcall fixedDelay\n"
+    "rcall fixedDelay\n"
+    "rcall fixedDelay\n"
+  );
+#endif
   putch(STK_INSYNC);
 }
 
