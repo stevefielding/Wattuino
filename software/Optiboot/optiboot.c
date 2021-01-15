@@ -371,6 +371,9 @@ void __attribute__((noinline)) putch(char);
 uint8_t __attribute__((noinline)) getch(void);
 void __attribute__((noinline)) verifySpace();
 void __attribute__((noinline)) watchdogConfig(uint8_t x);
+#ifdef RS485
+void __attribute__((noinline)) getMultiSync();
+#endif
 
 static inline void getNch(uint8_t);
 #if LED_START_FLASHES > 0
@@ -589,6 +592,11 @@ int main(void) {
   UART_SRL = td.u8.l;
 #endif
 #endif // AUTO_BAUD
+
+#ifdef RS485
+  //wait for multi sync sequence
+  getMultiSync();
+#endif
 
   //wait for sync command
   while(getch() != STK_GET_SYNC)
@@ -1081,3 +1089,56 @@ static inline void read_mem(uint8_t memtype, uint16_t address, pagelen_t length)
 	break;
     } // switch
 }
+
+#ifdef RS485
+void getMultiSync(void) {
+uint8_t syncCnt;
+uint8_t ch;
+uint8_t nodeId;
+
+  nodeId = 1; // replace with read from eeprom
+  syncCnt = 0;
+
+  // Exit from loop if multi sync sequence received or watchdog timeout
+  // Expects sequence SYNC1, CRC_EOP, SYNC2, CRC_EOP, SYNC3, CRC_EOP, nodeId, CRC_EOP
+  // Including CRC_EOP is supposed to keep the bootloader active if this is accidentally the
+  // second time that the sync sequence has been received. However, this might not work too well
+  // because the sync word may match a valid stk command.
+  while (syncCnt != 8) { 
+    ch = getch();
+    if (ch == MULTI_SYNC1)
+      syncCnt = 1;
+    else if (ch == MULTI_SYNC3) {
+      if (syncCnt == 2)
+        syncCnt = 3;
+      else
+        syncCnt = 0;
+    }
+    else if (ch == MULTI_SYNC5) {
+      if (syncCnt == 4)
+        syncCnt = 5;
+      else
+        syncCnt = 0;
+    }
+    else if (ch == nodeId) {
+      if (syncCnt == 6)
+        syncCnt = 7;
+      else
+        syncCnt = 0;
+    }
+    else if (ch == CRC_EOP) {
+      if (syncCnt == 1)
+        syncCnt = 2;
+      else if (syncCnt == 3)
+        syncCnt = 4;
+      else if (syncCnt == 5)
+        syncCnt = 6;
+      else if (syncCnt == 7)
+        syncCnt = 8;
+      else
+        syncCnt = 0;
+    }
+  }
+}
+#endif
+

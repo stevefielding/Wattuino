@@ -42,3 +42,11 @@
 #define STK_READ_OSCCAL     0x76  // 'v'
 #define STK_READ_FUSE_EXT   0x77  // 'w'
 #define STK_READ_OSCCAL_EXT 0x78  // 'x'
+
+// Added extra syncs to enable exclusive selection of single node
+// on a shared RS485 bus.
+// Assume that this sequence is unlikely to occur during code download, and
+// thus activate a second RS485 node
+#define MULTI_SYNC1       0x79
+#define MULTI_SYNC3       0x46
+#define MULTI_SYNC5       0x25
