@@ -1,4 +1,9 @@
 # Wattuino
+Removed majority of the project. What remains is the Optiboot loader, which has been modified to work with
+a multi node RS485 network. Uses a sync word to identify each node and requires a modified avrdude to 
+send the appropriate sync word.
+* [avrdude_rs485](https://github.com/stevefielding/avrdude_rs485)
+
 Arduino compatible Boards and Modules.
 
 * [Wattuino Board Support Package](https://learn.watterott.com/arduino/watterott-boards) for Arduino IDE.
