@@ -372,7 +372,7 @@ uint8_t __attribute__((noinline)) getch(void);
 void __attribute__((noinline)) verifySpace();
 void __attribute__((noinline)) watchdogConfig(uint8_t x);
 #ifdef RS485
-void __attribute__((noinline)) getMultiSync();
+void __attribute__((noinline)) getMultiSync(uint8_t nodeId);
 #endif
 
 static inline void getNch(uint8_t);
@@ -594,8 +594,10 @@ int main(void) {
 #endif // AUTO_BAUD
 
 #ifdef RS485
-  //wait for multi sync sequence
-  getMultiSync();
+  // get the nodeId from eeprom and then wait for multi sync sequence
+  EEAR = 0x4;
+  EECR |= 1 << EERE; // start the eeprom read by writing EERE
+  getMultiSync(EEDR);
 #endif
 
   //wait for sync command
@@ -1091,12 +1093,10 @@ static inline void read_mem(uint8_t memtype, uint16_t address, pagelen_t length)
 }
 
 #ifdef RS485
-void getMultiSync(void) {
+void getMultiSync(uint8_t nodeId) {
 uint8_t syncCnt;
 uint8_t ch;
-uint8_t nodeId;
 
-  nodeId = 1; // replace with read from eeprom
   syncCnt = 0;
 
   // Exit from loop if multi sync sequence received or watchdog timeout
