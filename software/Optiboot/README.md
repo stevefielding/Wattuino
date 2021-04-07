@@ -23,11 +23,11 @@ SCK:  PB5 / D13
 RST:  PC6 / Reset
 ```
 
-## Fuse Settings for ATmega328
+## Fuse Settings for ATmega328PB
 ```
-Extended: 0xFD
-High:     0xD6
-Low:      0xFF
+Extended: 0xF4
+High:     0xD4
+Low:      0xBF
 Lockbits: 0xCF (LPM and SPM prohibited in Boot Section)
 ```
 
