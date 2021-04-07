@@ -2,8 +2,11 @@
 
 [Optiboot](https://github.com/Optiboot/optiboot) is a small serial bootloader designed for Atmel AVR microcontrollers.
 
-This project is a modified Optiboot with auto baud rate detection specially for ATmega328 microcontrollers.
-
+This project is a modified Optiboot with baud rate fixed at 57600.  
+User code boot time is configured for 8s.  
+Configured for multiple optiboot nodes on a shared RS485 network. Each node is identified by an 8-bit NodeID that is programmed into
+EEPROM.  
+Optiboot configured to run after power up. So there is an 8s delay before user code is booted.
 The Optiboot project is released under GPL license.
 Code uploaded via the bootloader is not subject to any license issues.
 
@@ -31,7 +34,10 @@ Low:      0xBF
 Lockbits: 0xCF (LPM and SPM prohibited in Boot Section)
 ```
 
-## AVRdude Parameters for ATmega328
+## AVRdude Parameters for ATmega328PB
 ```
-avrdude -c avrisp2 -B 10 -p atmega328p -e -U flash:w:optiboot_m328p.hex:i -U lfuse:w:0xFF:m -U hfuse:w:0xD6:m -U efuse:w:0xFD:m -U lock:w:0xCF:m
+avrdude -c /home/pi/vv8/atom_scripts/avrdude_atmega328pb_conf/avrdude.conf \
+-v -patmega328pb -carduino -P/dev/ttyS0 -b57600 \
+-Uflash:w:/home/pi/vv8/progfiles/Blink_pod.ino.hex:i -z 1
+
 ```
